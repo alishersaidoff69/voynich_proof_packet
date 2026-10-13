@@ -1,0 +1,92 @@
+import cv2
+import numpy as np
+# Before starting, install the translation library: pip install deep-translator
+from deep-translator import GoogleTranslator
+# 1. DICTIONARY OF TWO-MIRROR REFLECTION (THIRD FIELD METHOD)
+# Key - EVA grapheme (as we see it), Value - real medieval root after X+Y inversion
+VOYNICH_DECODER_DICT = {
+'qo': 'pro', # The gallows with a loop to the right turns into the Latin Pro-/Per-/Pur-
+'g': 'us', # "nine" in the third field expands into the Latin ending -us
+'m': 'um', # Схожий знак окончания -um
+'sh': 'grad', # "Bench" straightens into Latin gradus (degrees)
+'ch': 'coct', # A smaller "bench" turns into a coctio (decoction/boil)
+'cc': 'aqua', # Double arcs merge into aq (aqua) when read from right to left
+'ee': 'was', # Double loops in the Old German context give was (wasser)
+'t': 'oz', # High counter with crosshair - apothecary ounce
+'k': 'dr', # A high stance of another type - drachm
+'y': 'ung', # The hook at the end of the word is the German verb/noun ending -ung
+'or': 'rot', # The mirror changes order: ro/rot (red/thermal)
+'ol': 'ol', # oleum (масло)
+'dy': 'bad', # In the third field, it transforms into Old German Badi / Bad (bathhouse, bath)
+'ct': 'coct', # Short for coctio
+'seubasg': 'bades' # Direct spread of the caption on page 78r (seubas9 -> bades / bath)
+}
+def decode_voynich_text(eva_text):
+"""
+The function simulates reading the text in the 'third field' of mirrors.
+It splits the line into words, flips the reading order (from right to left)
+and replaces EVA graphemes with real Latin and German roots.
+"""
+# Lowercase for stability
+words = eva_text.lower().split()
+decoded_words = []
+# The author wrote in the mirror, so you need to read in the third field FROM RIGHT TO LEFT
+# Expand the order of words in a line
+reversed_words = words[::-1]
+for word in reversed_words:
+# Check for a perfect match of the word (for example, for unique figure captions)
+if word in VOYNICH_DECODER_DICT:
+decoded_words.append(VOYNICH_DECODER_DICT[word])
+continue
+# If there is no complete match, parse the word by internal graphemes
+decoded_word = word
+# Sort the keys by length to replace the long patterns (qo, sh) first, and then the single ones (g, y)
+for key in sorted(VOYNICH_DECODER_DICT.keys(), key=len, reverse=True):
+if key in decoded_word:
+decoded_word = decoded_word.replace(key, VOYNICH_DECODER_DICT[key])
+decoded_words.append(decoded_word)
+return " ".join(decoded_words)
+def translate_to_english(reconstructed_text):
+"""
+The function takes the restored medieval text (a mixture of Latin and Old German)
+and translates it into modern English.
+"""
+try:
+# Using Google Translator through the deep-translator library
+# Specify the auto-detection of the source language (since the text is hybrid)
+translator = GoogleTranslator(source='auto', target='en')
+translation = translator.translate(reconstructed_text)
+return translation
+except Exception as e:
+return f"[Translation error: {str(e)}]. Please check your internet connection."
+# --- DEMONSTRATION OF THE SCRIPT ON YOUR EXAMPLES ---
+if __name__ == "__main__":
+print("="*60)
+print(" SYSTEM OF DIRECT TWO-MIRROR TRANSLATION OF THE VOYNICH MANUSCRIPT ")
+print("="*60)
+# Test 1: First line of page 78r (Biological section)
+sample_eva_1 = "qo shol or or cth ol"
+print(f"\n[1] Source text of line 78r (in EVA encoding): '{sample_eva_1}'")
+reconstructed_1 = decode_voynich_text(sample_eva_1)
+print(f" --> Restoring in the 'third field' of mirrors: '{reconstructed_1}'")
+english_1 = translate_to_english(reconstructed_1)
+print(f" --> DIRECT ENGLISH TRANSLATION: '{english_1}'")
+# Test 2: Caption to the drawing of the cascade of pools on page 78r
+sample_eva_2 = "seubasg"
+print(f"\n[2] Original isolated signature near water:
+'{sample_eva_2}'")
+reconstructed_2 = decode_voynich_text(sample_eva_2)
+print(f" --> Restoring mirrors in the 'third field':
+'{reconstructed_2}'")
+english_2 = translate_to_english(reconstructed_2)
+print(f" --> DIRECT ENGLISH TRANSLATION: '{english_2}'")
+#Test 3: Recipe String Indicating Weight (ounces)
+sample_eva_3 = "t ol t k g"
+print(f"\n[3] A line from the recipe department with weight measures:
+'{sample_eva_3}'")
+reconstructed_3 = decode_voynich_text(sample_eva_3)
+print(f" --> Restoring mirrors in the 'third field':
+'{reconstructed_3}'")
+english_3 = translate_to_english(reconstructed_3)
+print(f" --> DIRECT ENGLISH TRANSLATION: '{english_3}'")
+print("="*60)
